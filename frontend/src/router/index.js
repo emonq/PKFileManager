@@ -1,4 +1,4 @@
-import {createRouter, createWebHistory} from 'vue-router'
+import { createRouter, createWebHistory } from 'vue-router'
 import HomeView from '../views/HomeView.vue'
 
 const router = createRouter({
@@ -7,7 +7,10 @@ const router = createRouter({
         {
             path: '/',
             name: 'home',
-            component: HomeView
+            component: HomeView,
+            meta: {
+                title: '主页'
+            }
         },
         {
             path: '/profile',
@@ -15,14 +18,24 @@ const router = createRouter({
             // route level code-splitting
             // this generates a separate chunk (About.[hash].js) for this route
             // which is lazy-loaded when the route is visited.
-            component: () => import('../views/ProfileView.vue')
+            component: () => import('../views/ProfileView.vue'),
+            meta: {
+                title: '用户中心'
+            }
         },
         {
             path: '/auth',
             name: 'auth',
-            component: () => import('../views/AuthView.vue')
+            component: () => import('../views/AuthView.vue'),
+            meta: {
+                title: '用户认证'
+            }
         }
     ]
-})
+});
+router.afterEach((to, from) => {
+    console.log(to);
+    document.title = to.meta.title || 'PK File Manager';
+});
 
 export default router

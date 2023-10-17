@@ -1,8 +1,43 @@
-<script setup>
-import {NCard} from 'naive-ui'
-</script>
 <template>
-  <n-card title="PK File Manager" size="huge">
-    欢迎
-  </n-card>
+  <div v-if="user">
+    <h1>欢迎 {{ user.name }}</h1>
+  </div>
+  <div v-else>
+    <n-skeleton text :repeat="2" />
+  </div>
 </template>
+
+<script setup>
+
+import Corbado from '@corbado/webcomponent';
+import { onMounted, ref, inject } from 'vue';
+import { useRouter } from 'vue-router';
+import { NSkeleton, NButton } from 'naive-ui';
+
+const router = useRouter();
+const $http = inject('$http');
+
+const user = ref(null);
+const corbadoProjectID = ref(import.meta.env.VITE_CORBADO_PROJECT_ID);
+const session = new Corbado.Session(corbadoProjectID.value);
+
+onMounted(() => {
+  session.refresh((u) => { });
+  const token = $cookies.get('cbo_short_session');
+  $http.updateToken(token);
+  $http.get('/api/user/me')
+    .then((res) => {
+      console.log(res.data);
+      user.value = res.data;
+    });
+});
+
+const handleLogout = () => {
+  session.logout()
+    .then(async () => {
+      await router.push('/');
+    })
+    .catch(err => console.log(err))
+};
+
+</script>
