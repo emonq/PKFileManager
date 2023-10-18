@@ -1,8 +1,7 @@
 <script setup>
-import { useRouter } from 'vue-router';
-import { h, inject } from 'vue';
-import { routes } from '../router/index.js'
-import { NDropdown, NButton, NIcon, NButtonGroup, NSpace } from 'naive-ui';
+import {useRouter, useRoute} from 'vue-router';
+import {h, inject} from 'vue';
+import {NDropdown, NButton, NIcon, NButtonGroup, NSpace} from 'naive-ui';
 import {
   PersonCircleOutline as UserIcon,
   Pencil as EditIcon,
@@ -10,7 +9,9 @@ import {
 } from "@vicons/ionicons5";
 
 const router = useRouter();
-const $session = inject('$session');
+const route = useRoute();
+
+const $pkFileManager = inject('$pkFileManager');
 
 const renderIcon = (icon) => {
   return () => {
@@ -38,10 +39,7 @@ const options = [
     icon: renderIcon(LogoutIcon),
     props: {
       onClick: () => {
-        $session.logout().then(async () => {
-          await router.push('/auth');
-        })
-          .catch(err => console.log(err));
+        $pkFileManager.logout();
       }
     }
   }
@@ -51,13 +49,16 @@ const options = [
 <template>
   <n-space justify="space-between">
     <n-button-group>
-      <n-button v-for="route in routes.filter((route) => !route.meta.hideNav)" @click="router.push(route.path)" exact>
-        {{ route.meta.title }}
+      <n-button @click="router.push('/')">
+        主页
       </n-button>
     </n-button-group>
-    <n-dropdown :options="options">
+    <n-dropdown :options="options" v-if="$pkFileManager.user.value">
       <n-button>用户资料</n-button>
     </n-dropdown>
+    <n-button v-else @click="router.push('/auth')">
+      登录
+    </n-button>
   </n-space>
 </template>
 

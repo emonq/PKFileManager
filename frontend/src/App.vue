@@ -5,6 +5,7 @@ import { zhCN, dateZhCN } from 'naive-ui'
 
 import SiteHeader from "./components/SiteHeader.vue";
 
+
 </script>
 
 <template>
@@ -23,7 +24,6 @@ import SiteHeader from "./components/SiteHeader.vue";
                     </transition>
                   </router-view>
                 </n-card>
-
               </n-layout>
             </n-space>
           </n-dialog-provider>

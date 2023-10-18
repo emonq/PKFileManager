@@ -1,8 +1,6 @@
 import { createRouter, createWebHistory } from 'vue-router'
 import HomeView from '../views/HomeView.vue'
 
-import { session } from '../plugins/useCorbadoSession';
-
 const routes = [
     {
         path: '/',
@@ -50,7 +48,6 @@ const router = createRouter({
 
 router.afterEach((to, from) => {
     document.title = to.meta.title || 'PK File Manager';
-    session.refresh(() => { });
 });
 
 export default router

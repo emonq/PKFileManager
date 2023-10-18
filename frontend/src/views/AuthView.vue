@@ -8,22 +8,21 @@
 import '@corbado/webcomponent'
 import "@corbado/webcomponent/pkg/auth_cui.css"
 
-import { onMounted, ref } from 'vue'
-import { useRouter } from 'vue-router';
+import { onMounted, ref, inject } from 'vue'
+import { useRouter, useRoute } from 'vue-router';
 import Corbado from "@corbado/webcomponent";
 
 const corbadoProjectID = ref(import.meta.env.VITE_CORBADO_PROJECT_ID);
 
 const router = useRouter();
+const route = useRoute();
 const session = new Corbado.Session(corbadoProjectID.value);
+const $pkFileManager=inject('$pkFileManager');
 
 onMounted(() => {
-  session.refresh(u => {
-    console.log(u);
-    if (u) {
-      router.push('/profile');
-    }
-  });
+  if ($pkFileManager.user.value) {
+    router.push('/');
+  }
 })
 
 
