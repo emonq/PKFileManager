@@ -1,9 +1,9 @@
 <script setup>
 import { RouterView } from 'vue-router'
-import { NConfigProvider, NLoadingBarProvider, NMessageProvider, NNotificationProvider, NDialogProvider, NSpace, NLayout } from 'naive-ui'
+import { NCard, NConfigProvider, NLoadingBarProvider, NMessageProvider, NNotificationProvider, NDialogProvider, NSpace, NLayout } from 'naive-ui'
 import { zhCN, dateZhCN } from 'naive-ui'
 
-import SiteHeader from "@/SiteHeader.vue";
+import SiteHeader from "./components/SiteHeader.vue";
 
 </script>
 
@@ -14,13 +14,16 @@ import SiteHeader from "@/SiteHeader.vue";
         <n-notification-provider>
           <n-dialog-provider>
             <n-space vertical>
-              <n-layout class="root-layout">
+              <n-layout class="root-layout" embedded content-style="padding: 24px;">
                 <SiteHeader />
-                <router-view v-slot="{ Component, route }">
-                  <transition :name="route.meta.transition">
-                    <component :is="Component" />
-                  </transition>
-                </router-view>
+                <n-card>
+                  <router-view v-slot="{ Component, route }">
+                    <transition :name="route.meta.transition">
+                      <component :is="Component" />
+                    </transition>
+                  </router-view>
+                </n-card>
+
               </n-layout>
             </n-space>
           </n-dialog-provider>

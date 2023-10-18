@@ -1,4 +1,5 @@
 import axios from "axios"
+import Cookies from "js-cookie";
 
 const backendUrl = import.meta.env.VITE_API_BASE_URL
 const http = axios.create({
@@ -7,13 +8,13 @@ const http = axios.create({
     }
 });
 
-
 const httpClient = {
     install: (app, options) => {
         const router = options.router;
-        http.updateToken = (token) => {
-            http.defaults.headers.common['Authorization'] = `Bearer ${token}`
-        };
+        http.interceptors.request.use((config) => {
+            config.headers.Authorization = `Bearer ${Cookies.get('cbo_short_session')}`;
+            return config;
+        })
         http.interceptors.response.use(
             (response) => {
                 return response;
@@ -26,7 +27,7 @@ const httpClient = {
                 return Promise.reject(error);
             }
         );
-
+        app.config.globalProperties.$http = http;
         app.provide('$http', http);
     }
 }

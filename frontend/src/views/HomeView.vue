@@ -22,12 +22,8 @@ const corbadoProjectID = ref(import.meta.env.VITE_CORBADO_PROJECT_ID);
 const session = new Corbado.Session(corbadoProjectID.value);
 
 onMounted(() => {
-  session.refresh((u) => { });
-  const token = $cookies.get('cbo_short_session');
-  $http.updateToken(token);
   $http.get('/api/user/me')
     .then((res) => {
-      console.log(res.data);
       user.value = res.data;
     });
 });

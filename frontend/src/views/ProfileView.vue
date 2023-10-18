@@ -1,8 +1,16 @@
 <template>
   <div v-if="user">
-    <p>欢迎{{ user.name }}</p>
-    <p>{{ user.id }}</p>
-    <p>{{ user.email }}</p>
+    <n-form :model="user" label-placement="left" label-width="auto">
+      <n-form-item label="用户ID">
+        <n-tag :bordered="true">{{ user.id }}</n-tag>
+      </n-form-item>
+      <n-form-item label="用户名">
+        <n-tag :bordered="true">{{ user.name }}</n-tag>
+      </n-form-item>
+      <n-form-item label="邮箱">
+        <n-tag :bordered="true">{{ user.email }}</n-tag>
+      </n-form-item>
+    </n-form>
     <n-popconfirm @positive-click="handleLogout" :positive-button-props="{ type: 'error' }" :negative-text="null">
       <template #trigger>
         <n-button type="error">退出登录</n-button>
@@ -17,31 +25,28 @@
 
 <script setup>
 
-import Corbado from '@corbado/webcomponent';
 import { onMounted, ref, inject } from 'vue';
 import { useRouter } from 'vue-router';
-import { NSkeleton, NButton, NPopconfirm } from 'naive-ui';
+import { NSkeleton, NButton, NPopconfirm, NForm, NFormItem, NTag } from 'naive-ui';
 
 const router = useRouter();
 const $http = inject('$http');
+const $session = inject('$session');
+const $token = inject('$token');
 
 const user = ref(null);
-const corbadoProjectID = ref(import.meta.env.VITE_CORBADO_PROJECT_ID);
-const session = new Corbado.Session(corbadoProjectID.value);
+
 
 onMounted(() => {
-  session.refresh((u) => { });
-  const token = $cookies.get('cbo_short_session');
-  $http.updateToken(token);
+  $token.value = $cookies.get('cbo_short_session');
   $http.get('/api/user/me')
     .then((res) => {
-      console.log(res.data);
       user.value = res.data;
     });
 });
 
 const handleLogout = () => {
-  session.logout()
+  $session.logout()
     .then(async () => {
       await router.push('/');
     })
