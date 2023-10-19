@@ -1,11 +1,13 @@
-version: '3.8'
-
+version: '3'
 services:
-  web:
-    container_name: pkfilemanager
-    build: .
-    image: pkfilemanager:latest
+  pkfilemanager-server:
+    build: ./server
+    container_name: pkfilemanager-server
     ports:
       - "3000:3000"
+    environment:
+      - NODE_ENV=production
     env_file:
-      - .env
+      - ./server/.env
+    command: npm start
+    image: pkfilemanager-server:latest

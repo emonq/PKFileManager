@@ -1,23 +1,32 @@
 <template>
-  <corbado-auth :project-id="corbadoProjectID" conditional="yes">
-    <input id="corbado-username" autocomplete="webauthn" name="username" required />
-  </corbado-auth>
+  <n-tabs
+      class="card-tabs"
+      default-value="signin"
+      size="large"
+      animated
+      pane-wrapper-style="margin: 0 -4px"
+      pane-style="padding-left: 4px; padding-right: 4px; box-sizing: border-box;"
+  >
+    <n-tab-pane name="signin" tab="登录">
+      <UserSignIn/>
+    </n-tab-pane>
+    <n-tab-pane name="signup" tab="注册">
+      <UserSignup/>
+    </n-tab-pane>
+  </n-tabs>
 </template>
 
 <script setup>
-import '@corbado/webcomponent'
-import "@corbado/webcomponent/pkg/auth_cui.css"
+import UserSignup from "@/components/UserSignup.vue";
 
-import { onMounted, ref, inject } from 'vue'
-import { useRouter, useRoute } from 'vue-router';
-import Corbado from "@corbado/webcomponent";
-
-const corbadoProjectID = ref(import.meta.env.VITE_CORBADO_PROJECT_ID);
+import {onMounted, ref, inject} from 'vue'
+import {useRouter, useRoute} from 'vue-router';
+import UserSignIn from "@/components/UserSignIn.vue";
+import {NTabs, NTabPane} from "naive-ui";
 
 const router = useRouter();
 const route = useRoute();
-const session = new Corbado.Session(corbadoProjectID.value);
-const $pkFileManager=inject('$pkFileManager');
+const $pkFileManager = inject('$pkFileManager');
 
 onMounted(() => {
   if ($pkFileManager.user.value) {

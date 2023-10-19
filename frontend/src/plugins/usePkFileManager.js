@@ -4,6 +4,7 @@ import {
     create,
     parseCreationOptionsFromJSON,
 } from "@github/webauthn-json/browser-ponyfill";
+import {startRegistration, browserSupportsWebAuthnAutofill, startAuthentication} from '@simplewebauthn/browser';
 
 const backendUrl = import.meta.env.VITE_API_BASE_URL
 
@@ -50,13 +51,37 @@ const pkFileManager = {
                 email = pkFileManager.user.value.email;
             }
             console.log({username, email})
-            let res = await http.post('/api/user/webauthn/start', {username, email})
-            const publicKeyCredentialCreationOptions = parseCreationOptionsFromJSON(res.data);
-            console.log(publicKeyCredentialCreationOptions)
-            const credential = await create(publicKeyCredentialCreationOptions);
+            let res = await http.post('/api/user/webauthn/start', {username: username, id: email})
+            // const publicKeyCredentialCreationOptions = parseCreationOptionsFromJSON(res.data);
+            // console.log(publicKeyCredentialCreationOptions)
+            const credential = await startRegistration(res.data);
             console.log(credential);
             console.log({publicKeyCredential: JSON.stringify(credential)});
-            res = await http.post('/api/user/webauthn/finish', {publicKeyCredential: JSON.stringify(credential)});
+            res = await http.post('/api/user/webauthn/finish', credential);
+            console.log(res);
+        }
+
+        pkFileManager.signUp = async (username, email) => {
+            let res = await http.post('/api/user/signUpStart', {username, email});
+            let options = res.data;
+            let credential = await startRegistration(options);
+            console.log(credential);
+            return http.post('/api/user/signUpFinish', credential);
+        }
+
+        pkFileManager.signIn = async (username) => {
+            let res = await http.post('/api/user/login', {username});
+            let options = res.data;
+            console.log('options')
+            console.log(options)
+            let credential = await startAuthentication(options);
+            console.log('credential')
+            console.log(credential);
+            http.post('/api/user/login', credential)
+                .then((res) => {
+                    pkFileManager.user.value = res.data;
+                    router.push('/');
+                });
         }
 
         app.provide('$pkFileManager', pkFileManager);

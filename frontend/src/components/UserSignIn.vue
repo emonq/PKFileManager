@@ -1,40 +1,30 @@
 <template>
   <n-form :model="user">
-    <n-form-item label="邮箱" path="email">
-      <n-input v-model:value="user.email" placeholder="输入邮箱"/>
-    </n-form-item>
     <n-form-item label="用户名" path="username">
       <n-input v-model:value="user.username" placeholder="输入用户名"/>
     </n-form-item>
     <n-form-item>
-      <n-button type="primary" @click="register">注册</n-button>
+      <n-button type="primary" @click="register">登录</n-button>
     </n-form-item>
   </n-form>
 </template>
 <script setup>
 import {NForm, NFormItem, NInput, NButton, useMessage} from "naive-ui";
 import {ref, inject} from 'vue';
-import router from "@/router";
-
-const message = useMessage();
 
 const $pkFileManager = inject('$pkFileManager');
+const message = useMessage();
 
 const user = ref({
   username: null,
-  email: null
 });
 
 const register = () => {
-  $pkFileManager.signUp(user.value.username, user.value.email)
-      .then(() => {
-        message.success('注册成功');
-        router.push('/');
-      })
+  $pkFileManager.signIn(user.value.username)
       .catch((err) => {
         console.log(err);
         if (err.response.data.error)
-          message.error(`注册失败：${err.response.data.error}`);
+          message.error(`登录失败：${err.response.data.error}`);
       });
 }
 </script>

@@ -1,11 +1,8 @@
 <template>
   <div v-if="$pkFileManager.user.value">
     <n-form :model="$pkFileManager.user.value" label-placement="left" label-width="auto">
-      <n-form-item label="用户ID">
-        <n-tag :bordered="true">{{ $pkFileManager.user.value.id }}</n-tag>
-      </n-form-item>
       <n-form-item label="用户名">
-        <n-tag :bordered="true">{{ $pkFileManager.user.value.name }}</n-tag>
+        <n-tag :bordered="true">{{ $pkFileManager.user.value.username }}</n-tag>
       </n-form-item>
       <n-form-item label="邮箱">
         <n-tag :bordered="true">{{ $pkFileManager.user.value.email }}</n-tag>
