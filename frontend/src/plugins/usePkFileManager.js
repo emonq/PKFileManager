@@ -45,20 +45,19 @@ const pkFileManager = {
         pkFileManager.user = ref(null);
 
         pkFileManager.registerNewKey = async (username, email) => {
-            console.log(pkFileManager.user.value)
-            if (pkFileManager.user.value) {
-                username = pkFileManager.user.value.name;
-                email = pkFileManager.user.value.email;
-            }
-            console.log({username, email})
-            let res = await http.post('/api/user/webauthn/start', {username: username, id: email})
-            // const publicKeyCredentialCreationOptions = parseCreationOptionsFromJSON(res.data);
-            // console.log(publicKeyCredentialCreationOptions)
-            const credential = await startRegistration(res.data);
+            let res = await http.post('/api/user/signUpStart');
+            let options = res.data;
+            let credential = await startRegistration(options);
             console.log(credential);
-            console.log({publicKeyCredential: JSON.stringify(credential)});
-            res = await http.post('/api/user/webauthn/finish', credential);
-            console.log(res);
+            const promise = http.post('/api/user/signUpFinish', credential);
+            promise.then((res) => {
+                pkFileManager.user.value = res.data;
+                promise.resolve(res);
+            });
+            promise.catch(err => {
+                promise.reject(err);
+            })
+            return promise;
         }
 
         pkFileManager.signUp = async (username, email) => {
@@ -66,7 +65,15 @@ const pkFileManager = {
             let options = res.data;
             let credential = await startRegistration(options);
             console.log(credential);
-            return http.post('/api/user/signUpFinish', credential);
+            const promise = http.post('/api/user/signUpFinish', credential);
+            promise.then((res) => {
+                pkFileManager.user.value = res.data;
+                promise.resolve(res);
+            });
+            promise.catch(err => {
+                promise.reject(err);
+            })
+            return promise;
         }
 
         pkFileManager.signIn = async (username) => {
@@ -77,11 +84,15 @@ const pkFileManager = {
             let credential = await startAuthentication(options);
             console.log('credential')
             console.log(credential);
-            http.post('/api/user/login', credential)
-                .then((res) => {
-                    pkFileManager.user.value = res.data;
-                    router.push('/');
-                });
+            const promise = http.post('/api/user/login', credential);
+            promise.then((res) => {
+                pkFileManager.user.value = res.data;
+                promise.resolve(res);
+            });
+            promise.catch(err => {
+                promise.reject(err);
+            })
+            return promise;
         }
 
         app.provide('$pkFileManager', pkFileManager);

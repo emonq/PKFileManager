@@ -5,11 +5,14 @@ const Schema = mongoose.Schema;
 const CredentialSchema = new Schema({
     credentialID: { type: Buffer, required: true },
     credentialPublicKey: { type: Buffer, required: true },
+    credentialType: {type:String, required:true},
     counter: { type: Number, required: true, default: 0 },
     active: { type: Boolean, default: false },
+    transports: [{ type: String, enum: ["usb", "nfc", "ble", "internal"] }]
 });
 
 const UserSchema = new Schema({
+    id: {type: Schema.Types.ObjectId, required:true, index:{unique:true}},
     username: { type: String, required: true, maxLength: 100 },
     email: { type: String, required: true, maxLength: 100 },
     role: { type: String, enum: ["admin", "user"], default: "user" },

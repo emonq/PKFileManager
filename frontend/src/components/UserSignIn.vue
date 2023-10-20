@@ -11,9 +11,11 @@
 <script setup>
 import {NForm, NFormItem, NInput, NButton, useMessage} from "naive-ui";
 import {ref, inject} from 'vue';
+import {useRouter} from "vue-router";
 
 const $pkFileManager = inject('$pkFileManager');
 const message = useMessage();
+const router = useRouter();
 
 const user = ref({
   username: null,
@@ -21,6 +23,10 @@ const user = ref({
 
 const register = () => {
   $pkFileManager.signIn(user.value.username)
+      .then(() => {
+        message.success('登录成功');
+        router.push('/');
+      })
       .catch((err) => {
         console.log(err);
         if (err.response.data.error)
