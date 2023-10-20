@@ -19,6 +19,11 @@
             :pagination="{ pageSize: 5 }"
         />
       </n-form-item>
+      <n-form-item>
+        <n-button @click="$pkFileManager.registerNewKey">
+          注册新密钥
+        </n-button>
+      </n-form-item>
     </n-form>
     <n-popconfirm @positive-click="handleLogout" :positive-button-props="{ type: 'error' }" :negative-text="null">
       <template #trigger>
@@ -26,9 +31,7 @@
       </template>
       确定退出登录吗？
     </n-popconfirm>
-    <n-button @click="$pkFileManager.registerNewKey">
-      注册新密钥
-    </n-button>
+
   </div>
   <div v-else>
     <n-skeleton text :repeat="2"/>

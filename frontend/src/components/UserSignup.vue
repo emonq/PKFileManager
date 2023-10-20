@@ -1,10 +1,14 @@
 <template>
-  <n-form :model="user">
+  <n-form
+      ref="formRef"
+      :model="user"
+      :rules="rules"
+      :show-require-mark="true">
     <n-form-item label="邮箱" path="email">
-      <n-input v-model:value="user.email" placeholder="输入邮箱"/>
+      <n-input v-model:value="user.email"/>
     </n-form-item>
     <n-form-item label="用户名" path="username">
-      <n-input v-model:value="user.username" placeholder="输入用户名"/>
+      <n-input v-model:value="user.username"/>
     </n-form-item>
     <n-form-item>
       <n-button type="primary" @click="register">注册</n-button>
@@ -20,21 +24,59 @@ const message = useMessage();
 
 const $pkFileManager = inject('$pkFileManager');
 
+
+const formRef = ref(null);
 const user = ref({
   username: null,
   email: null
 });
 
-const register = () => {
-  $pkFileManager.signUp(user.value.username, user.value.email)
-      .then(() => {
-        message.success('注册成功');
-        router.push('/');
-      })
-      .catch((err) => {
-        console.log(err);
-        if (err.response.data.error)
-          message.error(`注册失败：${err.response.data.error}`);
-      });
+const rules = {
+  username: [
+    {
+      required: true,
+      message: '用户名不能为空',
+      trigger: ['blur'],
+    },
+    {
+      min: 1,
+      max: 64,
+      message: '用户名长度在 1 到 64 个字符',
+      trigger: ['blur'],
+    }
+  ],
+  email: [
+    {
+      required: true,
+      message: '邮箱不能为空',
+      trigger: ['blur'],
+    },
+    {
+      type: 'email',
+      message: '邮箱格式不正确',
+      trigger: ['blur'],
+    }
+  ]
+}
+
+const register = (e) => {
+  e.preventDefault();
+  formRef.value?.validate((errors) => {
+    if (!errors) {
+      $pkFileManager.signUp(user.value.username, user.value.email)
+          .then(() => {
+            message.success('注册成功');
+            router.push('/');
+          })
+          .catch((err) => {
+            console.log(err);
+            if (err.response.data.error)
+              message.error(`注册失败：${err.response.data.error}`);
+          });
+    } else {
+      message.error("注册失败，请检查输入");
+    }
+  });
+
 }
 </script>

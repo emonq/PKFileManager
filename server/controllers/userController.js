@@ -138,45 +138,52 @@ exports.signUpFinish = async (req, res) => {
     res.json(extractUserInfo(user));
 }
 
-exports.login = async (req, res) => {
-    if (req.body.username) {
-        req.session.username = req.body.username;
-        let user = await User.findOne({username: req.body.username});
-        if (!user) {
-            res.status(400).json({error: 'User not found'});
-            return;
-        }
-        const credentials = user.credentials;
-        const allowedCredentials = credentials.map(credential => {
-            return {
-                id: credential.credentialID,
-                type: 'public-key',
-            }
-        });
-
-        const options = await generateAuthenticationOptions({
-            allowCredentials: allowedCredentials,
-            userVerification: 'preferred',
-        });
-        req.session.login = {
-            uid: user.id,
-            challenge: options.challenge
-        };
-        res.json(options);
+exports.loginStart = async (req, res) => {
+    req.session.username = req.body.username;
+    let user = await User.findOne({username: req.body.username});
+    if (!user) {
+        res.status(400).json({error: 'User not found'});
+        return;
     }
-    // finish login
-    else {
-        const user = await User.findOne({id: req.session.login.uid});
-        if (!user) {
-            res.status(400).json({error: "User not found"});
-            return;
+    const credentials = user.credentials;
+    const allowedCredentials = credentials.map(credential => {
+        return {
+            id: credential.credentialID,
+            type: 'public-key',
         }
-        const credentialIDBase64 = Buffer.from(isoBase64URL.toBuffer(req.body.id)).toString('base64');
-        const credential = user.credentials.find(credential => credential.credentialID.toString('base64') === credentialIDBase64);
-        if (!credential) {
-            res.status(400).json({error: 'Invalid credential ID'});
-            return;
-        }
+    });
+
+    const options = await generateAuthenticationOptions({
+        allowCredentials: allowedCredentials,
+        userVerification: 'preferred',
+    });
+    req.session.login = {
+        uid: user.id,
+        challenge: options.challenge
+    };
+    res.json(options);
+}
+
+exports.loginFinish = async (req, res) => {
+    const user = await User.findOne({id: req.session.login.uid});
+    if (!user) {
+        res.status(400).json({error: "User not found"});
+        req.session.login = null;
+        return;
+    }
+    if (!req.body.id) {
+        res.status(400).json({error: "Invalid credential ID"});
+        req.session.login = null;
+        return;
+    }
+    const credentialIDBase64 = Buffer.from(isoBase64URL.toBuffer(req.body.id)).toString('base64');
+    const credential = user.credentials.find(credential => credential.credentialID.toString('base64') === credentialIDBase64);
+    if (!credential) {
+        res.status(400).json({error: 'Invalid credential ID'});
+        req.session.login = null;
+        return;
+    }
+    try {
         let verification = await verifyAuthenticationResponse({
             response: req.body,
             expectedChallenge: req.session.login.challenge,
@@ -185,10 +192,10 @@ exports.login = async (req, res) => {
             authenticator: credential,
             requireUserVerification: true,
         });
-
         const {verified, authenticationInfo} = verification;
         if (!verified) {
             res.status(400).json({error: 'Invalid authentication response'});
+            req.session.login = null;
             return;
         }
         credential.counter = authenticationInfo.newCounter;
@@ -196,6 +203,9 @@ exports.login = async (req, res) => {
         req.session.user = user;
         req.session.login = null;
         res.json(extractUserInfo(user));
+    } catch (e) {
+        res.status(400).json({error: 'Invalid authentication response'});
+        req.session.login = null;
     }
 }
 

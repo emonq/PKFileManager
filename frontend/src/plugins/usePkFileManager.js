@@ -1,10 +1,6 @@
 import axios from "axios";
 import {ref} from 'vue';
-import {
-    create,
-    parseCreationOptionsFromJSON,
-} from "@github/webauthn-json/browser-ponyfill";
-import {startRegistration, browserSupportsWebAuthnAutofill, startAuthentication} from '@simplewebauthn/browser';
+import {startAuthentication, startRegistration} from '@simplewebauthn/browser';
 
 const backendUrl = import.meta.env.VITE_API_BASE_URL
 
@@ -49,15 +45,8 @@ const pkFileManager = {
             let options = res.data;
             let credential = await startRegistration(options);
             console.log(credential);
-            const promise = http.post('/api/user/signUpFinish', credential);
-            promise.then((res) => {
-                pkFileManager.user.value = res.data;
-                promise.resolve(res);
-            });
-            promise.catch(err => {
-                promise.reject(err);
-            })
-            return promise;
+            res = await http.post('/api/user/signUpFinish', credential);
+            pkFileManager.user.value = res.data;
         }
 
         pkFileManager.signUp = async (username, email) => {
@@ -65,34 +54,22 @@ const pkFileManager = {
             let options = res.data;
             let credential = await startRegistration(options);
             console.log(credential);
-            const promise = http.post('/api/user/signUpFinish', credential);
-            promise.then((res) => {
-                pkFileManager.user.value = res.data;
-                promise.resolve(res);
-            });
-            promise.catch(err => {
-                promise.reject(err);
-            })
-            return promise;
+            res = await http.post('/api/user/signUpFinish', credential);
+            pkFileManager.user.value = res.data;
+            return res;
         }
 
         pkFileManager.signIn = async (username) => {
-            let res = await http.post('/api/user/login', {username});
+            let res = await http.post('/api/user/loginStart', {username});
             let options = res.data;
             console.log('options')
             console.log(options)
             let credential = await startAuthentication(options);
             console.log('credential')
             console.log(credential);
-            const promise = http.post('/api/user/login', credential);
-            promise.then((res) => {
-                pkFileManager.user.value = res.data;
-                promise.resolve(res);
-            });
-            promise.catch(err => {
-                promise.reject(err);
-            })
-            return promise;
+            res = await http.post('/api/user/loginFinish', credential);
+            pkFileManager.user.value = res.data;
+            return res;
         }
 
         app.provide('$pkFileManager', pkFileManager);
