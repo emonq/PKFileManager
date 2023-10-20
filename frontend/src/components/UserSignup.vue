@@ -36,20 +36,20 @@ const rules = {
     {
       required: true,
       message: '用户名不能为空',
-      trigger: ['blur'],
+      trigger: ['blur', 'input'],
     },
     {
       min: 1,
       max: 64,
       message: '用户名长度在 1 到 64 个字符',
-      trigger: ['blur'],
+      trigger: ['blur', 'input'],
     }
   ],
   email: [
     {
       required: true,
       message: '邮箱不能为空',
-      trigger: ['blur'],
+      trigger: ['blur', 'input'],
     },
     {
       type: 'email',

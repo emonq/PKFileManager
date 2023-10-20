@@ -2,6 +2,7 @@ const express = require("express");
 const dotenv = require("dotenv")
 const morgan = require('morgan');
 const session = require('express-session');
+const MongoStore = require('connect-mongo');
 
 dotenv.config()
 
@@ -12,7 +13,7 @@ const app = express();
 
 const mongoose = require("mongoose");
 const mongoDB = `mongodb://${MONGODB_HOST}:${MONGODB_PORT}/`;
-mongoose.connect(mongoDB, { useNewUrlParser: true, useUnifiedTopology: true })
+mongoose.connect(mongoDB, {useNewUrlParser: true, useUnifiedTopology: true})
     .then(() => console.log("MongoDB connected"))
 mongoose.Promise = global.Promise;
 const db = mongoose.connection;
@@ -23,9 +24,10 @@ app.use(morgan('dev'));
 app.use(session({
     secret: SESSION_SECRET,
     resave: false,
-    saveUninitialized: false,
+    saveUninitialized: true,
+    store: MongoStore.create({mongoUrl: mongoDB}),
     cookie: {
-        secure: false,
+        secure: process.env.NODE_ENV === 'production',
         httpOnly: false,
         maxAge: 1000 * 60 * 60, // 1 hour
         rolling: true

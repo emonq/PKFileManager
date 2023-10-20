@@ -9,6 +9,13 @@ const {User, Credential} = require('../models/user');
 
 const {rpName, rpID, origin} = require('../config/rp.config');
 const mongoose = require("mongoose");
+const smtpSender = require('../utils/smtpSender');
+
+const EMAIL_CODE_MAX_TRIES = process.env.EMAIL_CODE_MAX_TRIES || 3;
+const EMAIL_SEND_INTERVAL = process.env.EMAIL_SEND_INTERVAL || 1000 * 60; // 1000*60 ms = 1 minute
+const EMAIL_CODE_EXPIRATION = process.env.EMAIL_CODE_EXPIRATION || 1000 * 60 * 5; // 1000*60*5 ms = 5 minutes
+
+const {customAlphabet, nanoid} = require('nanoid');
 
 const extractUserInfo = (user) => {
     return {
@@ -18,7 +25,9 @@ const extractUserInfo = (user) => {
         role: user.role,
         credentials: user.credentials.map(credential => ({
             id: credential.credentialID.toString('base64'),
-            type: credential.credentialType
+            type: credential.credentialType,
+            createdAt: credential.createdAt,
+            updatedAt: credential.updatedAt,
         }))
     }
 }
@@ -29,8 +38,21 @@ exports.getMe = async (req, res) => {
     res.json(info);
 }
 
-const webauthnRegistrationStart = async () => {
+exports.removeKey = async (req, res) => {
+    if (!req.body.id) {
+        res.status(400).json({error: 'Invalid credential ID'});
+        return;
+    }
+    const user = await User.findOne({id: req.session.user.id})
+    const credential = user.credentials.find(credential => credential.credentialID.toString('base64') === req.body.id);
+    if (!credential) {
+        res.status(400).json({error: 'Invalid credential ID'});
+        return;
+    }
+    await user.credentials.id(credential._id).deleteOne();
+    await user.save();
 
+    res.json(extractUserInfo(user));
 }
 
 exports.signUpStart = async (req, res) => {
@@ -139,73 +161,134 @@ exports.signUpFinish = async (req, res) => {
 }
 
 exports.loginStart = async (req, res) => {
-    req.session.username = req.body.username;
+    const method = req.body.method || 'passkey';
+
     let user = await User.findOne({username: req.body.username});
     if (!user) {
         res.status(400).json({error: 'User not found'});
         return;
     }
-    const credentials = user.credentials;
-    const allowedCredentials = credentials.map(credential => {
-        return {
-            id: credential.credentialID,
-            type: 'public-key',
-        }
-    });
-
-    const options = await generateAuthenticationOptions({
-        allowCredentials: allowedCredentials,
-        userVerification: 'preferred',
-    });
     req.session.login = {
         uid: user.id,
-        challenge: options.challenge
+        method: method,
     };
-    res.json(options);
+    if (method === 'passkey') {
+        const credentials = user.credentials;
+        const allowedCredentials = credentials.map(credential => {
+            return {
+                id: credential.credentialID,
+                type: 'public-key',
+            }
+        });
+
+        const options = await generateAuthenticationOptions({
+            allowCredentials: allowedCredentials,
+            userVerification: 'preferred',
+        });
+
+        req.session.login.challenge = options.challenge;
+        res.json(options);
+    } else if (method === 'email') {
+        if (new Date() - user.lastEmailTime < EMAIL_SEND_INTERVAL) {
+            res.status(403).json({error: 'Email sent too frequently'});
+            return;
+        }
+
+        const code = customAlphabet('0123456789', 6)();
+
+        try {
+            await smtpSender.sendCode(user.email, code)
+            user.lastEmailTime = new Date();
+            await user.save();
+            req.session.login.code = code;
+            req.session.login.codeSentAt = new Date();
+            req.session.login.retries = EMAIL_CODE_MAX_TRIES;
+            res.json({message: 'Email sent'});
+        } catch (err) {
+            console.log(err);
+            req.session.login = null;
+            res.status(500).json({error: 'Failed to send email'});
+            return;
+        }
+
+    } else {
+        req.login = null;
+        res.status(400).json({error: `authentication method ${method} is not supported`})
+    }
 }
 
 exports.loginFinish = async (req, res) => {
+    if (!req.session.login) {
+        res.status(400).json({error: "Invalid login request"});
+        return;
+    }
+
     const user = await User.findOne({id: req.session.login.uid});
     if (!user) {
         res.status(400).json({error: "User not found"});
         req.session.login = null;
         return;
     }
-    if (!req.body.id) {
-        res.status(400).json({error: "Invalid credential ID"});
-        req.session.login = null;
-        return;
-    }
-    const credentialIDBase64 = Buffer.from(isoBase64URL.toBuffer(req.body.id)).toString('base64');
-    const credential = user.credentials.find(credential => credential.credentialID.toString('base64') === credentialIDBase64);
-    if (!credential) {
-        res.status(400).json({error: 'Invalid credential ID'});
-        req.session.login = null;
-        return;
-    }
-    try {
-        let verification = await verifyAuthenticationResponse({
-            response: req.body,
-            expectedChallenge: req.session.login.challenge,
-            expectedOrigin: origin,
-            expectedRPID: rpID,
-            authenticator: credential,
-            requireUserVerification: true,
-        });
-        const {verified, authenticationInfo} = verification;
-        if (!verified) {
-            res.status(400).json({error: 'Invalid authentication response'});
+
+    if (req.session.login.method === 'passkey') {
+        if (!req.body.id) {
+            res.status(400).json({error: "Invalid credential ID"});
             req.session.login = null;
             return;
         }
-        credential.counter = authenticationInfo.newCounter;
-        await user.save();
+        const credentialIDBase64 = Buffer.from(isoBase64URL.toBuffer(req.body.id)).toString('base64');
+        const credential = user.credentials.find(credential => credential.credentialID.toString('base64') === credentialIDBase64);
+        if (!credential) {
+            res.status(400).json({error: 'Invalid credential ID'});
+            req.session.login = null;
+            return;
+        }
+        try {
+            let verification = await verifyAuthenticationResponse({
+                response: req.body,
+                expectedChallenge: req.session.login.challenge,
+                expectedOrigin: origin,
+                expectedRPID: rpID,
+                authenticator: credential,
+                requireUserVerification: true,
+            });
+            const {verified, authenticationInfo} = verification;
+            if (!verified) {
+                res.status(400).json({error: 'Invalid authentication response'});
+                req.session.login = null;
+                return;
+            }
+            credential.counter = authenticationInfo.newCounter;
+            await user.save();
+            req.session.user = user;
+            res.json(extractUserInfo(user));
+        } catch (e) {
+            res.status(403).json({error: 'Invalid authentication response'});
+        } finally {
+            req.session.login = null;
+        }
+    } else if (req.session.login.method === 'email') {
+        if (new Date() - req.session.login.codeSentAt > EMAIL_CODE_EXPIRATION) {
+            res.status(403).json({error: 'Code expired'});
+            req.session.login = null;
+            return;
+        }
+        if (req.body.code !== req.session.login.code) {
+            req.session.login.retries--;
+            if (req.session.login.retries <= 0) {
+                req.session.login = null;
+                res.status(403).json({error: 'Too many retries'});
+            } else {
+                res.status(400).json({error: 'Invalid code'});
+            }
+            return;
+        }
+        req.session.login = null;
         req.session.user = user;
-        req.session.login = null;
         res.json(extractUserInfo(user));
-    } catch (e) {
-        res.status(400).json({error: 'Invalid authentication response'});
+    } else {
         req.session.login = null;
+        res.status(403).json({error: 'Invalid login method'});
     }
 }
 

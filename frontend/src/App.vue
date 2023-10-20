@@ -28,7 +28,7 @@ import SiteHeader from "./components/SiteHeader.vue";
                 <n-card>
                   <router-view v-slot="{ Component, route }">
                     <transition :name="route.meta.transition">
-                      <component :is="Component"/>
+                      <component :is="Component" :key="route.path"/>
                     </transition>
                   </router-view>
                 </n-card>

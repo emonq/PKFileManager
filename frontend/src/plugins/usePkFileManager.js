@@ -26,26 +26,32 @@ const pkFileManager = {
             }
         );
 
+        pkFileManager.user = ref(null);
         pkFileManager.getMe = () => {
             http.get('/api/user/me')
                 .then((res) => {
                     pkFileManager.user.value = res.data;
                 });
         }
+
         pkFileManager.logout = () => {
             http.post('/api/user/logout').then(() => {
                 pkFileManager.user.value = null;
                 router.push('/auth');
             });
         }
-        pkFileManager.user = ref(null);
 
-        pkFileManager.registerNewKey = async (username, email) => {
+        pkFileManager.registerNewKey = async () => {
             let res = await http.post('/api/user/signUpStart');
             let options = res.data;
             let credential = await startRegistration(options);
             console.log(credential);
             res = await http.post('/api/user/signUpFinish', credential);
+            pkFileManager.user.value = res.data;
+        }
+
+        pkFileManager.removeKey = async (id) => {
+            let res = await http.delete('/api/user/removeKey', {data: {id}});
             pkFileManager.user.value = res.data;
         }
 
@@ -59,7 +65,7 @@ const pkFileManager = {
             return res;
         }
 
-        pkFileManager.signIn = async (username) => {
+        pkFileManager.signInPasskey = async (username) => {
             let res = await http.post('/api/user/loginStart', {username});
             let options = res.data;
             console.log('options')
@@ -68,6 +74,16 @@ const pkFileManager = {
             console.log('credential')
             console.log(credential);
             res = await http.post('/api/user/loginFinish', credential);
+            pkFileManager.user.value = res.data;
+            return res;
+        }
+
+        pkFileManager.signInEmailStart = async (username) => {
+            return await http.post('/api/user/loginStart', {username, method: 'email'});
+        }
+
+        pkFileManager.signInEmailFinish = async (code) => {
+            let res = await http.post('/api/user/loginFinish', {code});
             pkFileManager.user.value = res.data;
             return res;
         }
