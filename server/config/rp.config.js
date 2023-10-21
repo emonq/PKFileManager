@@ -1,5 +1,5 @@
 const rpName = 'PK File Manager';
-const rpID = 'localhost';
+const rpID = process.env.RP_ID || process.env.ORIGIN;
 const origin = process.env.ORIGIN;
 
 module.exports = {

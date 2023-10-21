@@ -3,11 +3,12 @@ const dotenv = require("dotenv")
 const morgan = require('morgan');
 const session = require('express-session');
 const MongoStore = require('connect-mongo');
+const crypto = require('crypto');
 
 dotenv.config()
 
-const EXPRESS_PORT = process.env.PORT || 3000;
-const SESSION_SECRET = process.env.SESSION_SECRET || (Math.random() * 100000000000000000).toString(36);
+const EXPRESS_PORT = process.env.EXPRESS_PORT || 3000;
+const SESSION_SECRET = process.env.SESSION_SECRET || crypto.randomBytes(56).toString('hex');
 const {MONGODB_HOST, MONGODB_PORT} = process.env;
 const app = express();
 
