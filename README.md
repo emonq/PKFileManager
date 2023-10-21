@@ -14,7 +14,7 @@ A file manager aims at better security.
 
 The backend application requires following environment variables:
 
-**NODE_ENV **: development or production
+**NODE_ENV**: development or production
 
 **ORIGIN**: Origin of the frontend, used for CORS
 
