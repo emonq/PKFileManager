@@ -30,6 +30,8 @@ The backend application requires following environment variables:
 
 **FILE_STORAGE_DIR**: Directory to save user uploaded files.
 
+**SECURE_COOKIE**: Used to see secure attribute on cookie. Set to true only when you are using HTTPS.
+
 You can specified these environment variables in `docker-compose.yml` in `server` directory or place them in a `.env` file. After that, use `docker-compose build` and `docker-compose up -d` to run the backend service.
 
 **Frontend**

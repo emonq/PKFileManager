@@ -26,7 +26,7 @@ services:
     command: npm start
     volumes:
       - npm-cache:/root/.npm
-    image: pkfilemanager-server:latest
+    image: emonq/pkfilemanager-server:latest
 
 volumes:
   npm-cache:
