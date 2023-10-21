@@ -27,4 +27,5 @@ jobs:
         with:
           context: server
           push: true
+          platforms: linux/amd64,linux/arm64
           tags: emonq/pkfilemanager-server:latest
