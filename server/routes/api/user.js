@@ -2,11 +2,11 @@ const express = require("express");
 const router = express.Router();
 const user_controller = require("../../controllers/userController");
 
-const authenticated = require("../../middleware/authed_user_only");
+const authenticated = require("../../middleware/require_authentication");
 
 router.get("/me", authenticated, user_controller.getMe);
 router.post("/logout", authenticated, user_controller.logout);
-router.delete("/removeKey", authenticated, user_controller.removeKey);
+router.post("/removeKey", authenticated, user_controller.removeKey);
 router.post("/signUpStart", user_controller.signUpStart);
 router.post("/signUpFinish", user_controller.signUpFinish);
 router.post("/loginStart", user_controller.loginStart);

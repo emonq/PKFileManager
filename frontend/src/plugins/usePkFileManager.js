@@ -18,15 +18,16 @@ const pkFileManager = {
                 return response;
             },
             (error) => {
-                if (error.response.status === 401) {
+                if (error.response?.status === 401) {
                     router.push('/auth');
-                    return Promise.resolve(error.response);
+                    return Promise.reject(error.response);
                 }
                 return Promise.reject(error);
             }
         );
 
         pkFileManager.user = ref(null);
+        pkFileManager.http = http;
         pkFileManager.getMe = () => {
             http.get('/api/user/me')
                 .then((res) => {
@@ -51,7 +52,7 @@ const pkFileManager = {
         }
 
         pkFileManager.removeKey = async (id) => {
-            let res = await http.delete('/api/user/removeKey', {data: {id}});
+            let res = await http.post('/api/user/removeKey', {id});
             pkFileManager.user.value = res.data;
         }
 
@@ -86,6 +87,45 @@ const pkFileManager = {
             let res = await http.post('/api/user/loginFinish', {code});
             pkFileManager.user.value = res.data;
             return res;
+        }
+
+        pkFileManager.getFiles = async () => {
+            const res = await http.post('/api/file/list');
+            return res.data.map(file => {
+                file.status = 'finished';
+                file.fileId = file.id;
+                file.url = `${backendUrl}/api/file/${file.id}`;
+                return file;
+            })
+        }
+
+        pkFileManager.uploadFile = async (file, onProgress, controller) => {
+            const formData = new FormData();
+            formData.append(file.name, file.file);
+            let res = await http.post(
+                '/api/file/upload',
+                formData,
+                {
+                    signal: controller.signal,
+                    onUploadProgress: (progressEvent) => {
+                        onProgress({percent: Math.round((progressEvent.loaded * 100) / progressEvent.total)});
+                    }
+                });
+            // handle single file only
+            for (let name of Object.keys(res.data)) {
+                if (res.data[name].error) {
+                    file.status = 'error';
+                } else {
+                    file.status = 'finished';
+                    file.url = `${backendUrl}/api/file/${res.data[name].id}`;
+                }
+            }
+            return file;
+        }
+
+        pkFileManager.deleteFile = async (url) => {
+            const res = await axios.delete(url, {withCredentials: true})
+            return res.data
         }
 
         app.provide('$pkFileManager', pkFileManager);

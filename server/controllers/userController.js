@@ -5,7 +5,8 @@ const {
     verifyAuthenticationResponse
 } = require('@simplewebauthn/server');
 const {isoBase64URL, isoUint8Array, isoCBOR} = require('@simplewebauthn/server/helpers');
-const {User, Credential} = require('../models/user');
+const {User} = require('../models/user');
+const {Credential} = require('../models/credential');
 
 const {rpName, rpID, origin} = require('../config/rp.config');
 const mongoose = require("mongoose");
@@ -23,6 +24,7 @@ const extractUserInfo = (user) => {
         username: user.username,
         email: user.email,
         role: user.role,
+        allowEmailLogin: user.allowEmailLogin,
         credentials: user.credentials.map(credential => ({
             id: credential.credentialID.toString('base64'),
             type: credential.credentialType,
@@ -34,6 +36,11 @@ const extractUserInfo = (user) => {
 
 exports.getMe = async (req, res) => {
     const user = await User.findOne({_id: req.session.user._id})
+    if (!user) {
+        req.session.destroy();
+        res.status(401).end();
+        return;
+    }
     const info = extractUserInfo(user)
     res.json(info);
 }
@@ -43,7 +50,12 @@ exports.removeKey = async (req, res) => {
         res.status(400).json({error: 'Invalid credential ID'});
         return;
     }
-    const user = await User.findOne({id: req.session.user.id})
+    const user = await User.findOne({id: req.session.user.id});
+    if (!user) {
+        req.session.destroy();
+        res.status(401).end();
+        return;
+    }
     const credential = user.credentials.find(credential => credential.credentialID.toString('base64') === req.body.id);
     if (!credential) {
         res.status(400).json({error: 'Invalid credential ID'});
@@ -87,7 +99,7 @@ exports.signUpStart = async (req, res) => {
             return;
         }
 
-        uid = new mongoose.Types.ObjectId();
+        uid = nanoid();
         username = req.body.username;
         req.session.registration = {
             registrationId: uid,
@@ -226,7 +238,7 @@ exports.loginFinish = async (req, res) => {
     const user = await User.findOne({id: req.session.login.uid});
     if (!user) {
         res.status(400).json({error: "User not found"});
-        req.session.login = null;
+        req.session.destroy();
         return;
     }
 

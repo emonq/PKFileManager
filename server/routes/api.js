@@ -10,9 +10,10 @@ router.use(cors({
     credentials: true
 }));
 router.use(bodyParser.json());
-// router.use(nocache);
+router.use(nocache);
 
 router.use("/user", require("./api/user"));
+router.use("/file", require("./api/file"));
 
 
 module.exports = router;

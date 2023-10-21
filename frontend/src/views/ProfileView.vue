@@ -10,7 +10,10 @@
       <n-form-item label="邮箱">
         <n-tag :bordered="true">{{ $pkFileManager.user.value.email }}</n-tag>
       </n-form-item>
-      <n-form-item label="用户凭证">
+      <n-form-item label="角色">
+        <n-tag :bordered="true">{{ $pkFileManager.user.value.role }}</n-tag>
+      </n-form-item>
+      <n-form-item label="登录凭证">
         <n-data-table
             :bordered="false"
             :single-line="false"
@@ -21,7 +24,7 @@
       </n-form-item>
       <n-form-item>
         <n-button @click="registerNewKey">
-          注册新密钥
+          注册新登录凭证
         </n-button>
       </n-form-item>
     </n-form>

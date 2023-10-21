@@ -1,11 +1,10 @@
-import { createRouter, createWebHistory } from 'vue-router'
-import HomeView from '../views/HomeView.vue'
+import {createRouter, createWebHistory} from 'vue-router'
 
 const routes = [
     {
         path: '/',
         name: 'home',
-        component: HomeView,
+        component: () => import('../views/HomeView.vue'),
         meta: {
             title: '主页'
         }
@@ -51,4 +50,4 @@ router.afterEach((to, from) => {
 });
 
 export default router
-export { routes }
+export {routes}

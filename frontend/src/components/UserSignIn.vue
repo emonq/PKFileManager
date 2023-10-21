@@ -17,6 +17,8 @@
       :show-icon="false"
       title="请输入验证码"
       positive-text="确认"
+      :auto-focus="true"
+      :closable="false"
       :mask-closable="false"
       @positive-click="signInEmailFinish"
   >
@@ -46,6 +48,7 @@ const requireEmailCode = ref(false);
 const $pkFileManager = inject('$pkFileManager');
 const message = useMessage();
 const router = useRouter();
+let sendingEmailMessage = null;
 
 const formRef = ref(null);
 
@@ -96,7 +99,11 @@ const signInEmail = () => {
           return;
         }
         message.error('登录邮件发送失败');
-      });
+      })
+      .finally(() => {
+        sendingEmailMessage?.destroy();
+        sendingEmailMessage = null;
+      })
 }
 
 const signInEmailFinish = (e) => {
@@ -138,7 +145,7 @@ const signIn = (e) => {
               message.error(`登录失败：${err.response.data.error}`);
               return;
             }
-            message.warning('使用Passkey登录失败，尝试使用邮箱登录');
+            sendingEmailMessage = message.loading('使用Passkey登录失败，正在尝试使用邮箱登录');
             signInEmail();
           });
     } else {
