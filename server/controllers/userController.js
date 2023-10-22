@@ -236,7 +236,7 @@ exports.loginStart = async (req, res) => {
 
 exports.loginFinish = async (req, res) => {
     if (!req.session.login) {
-        res.status(400).json({ error: "Invalid login request" });
+        res.status(400).json({ error: "Login not started" });
         return;
     }
 

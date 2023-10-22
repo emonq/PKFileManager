@@ -1,7 +1,7 @@
-const {FILE_STORAGE_DIR} = process.env;
+const { FILE_STORAGE_DIR } = process.env;
 
-const {User} = require("../models/user");
-const {File} = require("../models/file");
+const { User } = require("../models/user");
+const { File } = require("../models/file");
 const fs = require("fs");
 
 const generateFileList = (user) => {
@@ -17,7 +17,7 @@ const generateFileList = (user) => {
 }
 
 exports.upload = async (req, res) => {
-    const user = await User.findOne({id: req.session.user.id});
+    const user = await User.findOne({ id: req.session.user.id });
     if (!user) {
         res.status(401).end();
         req.session.destroy();
@@ -63,7 +63,7 @@ exports.upload = async (req, res) => {
 }
 
 exports.list = async (req, res) => {
-    const user = await User.findOne({id: req.session.user.id});
+    const user = await User.findOne({ id: req.session.user.id });
     if (!user) {
         res.status(400).end();
         req.session.destroy();
@@ -74,10 +74,8 @@ exports.list = async (req, res) => {
 }
 
 exports.download = async (req, res) => {
-    const user = await User.findOne({id: req.session.user.id});
-    console.log(req.params.id)
+    const user = await User.findOne({ id: req.session.user.id });
     const file = user.files.id(req.params.id);
-    console.log(file);
     if (!file) {
         res.status(404).end();
         return;
@@ -86,7 +84,7 @@ exports.download = async (req, res) => {
 }
 
 exports.delete = async (req, res) => {
-    const user = await User.findOne({id: req.session.user.id});
+    const user = await User.findOne({ id: req.session.user.id });
     const file = user.files.id(req.params.id);
     if (!file) {
         res.status(404).end();
