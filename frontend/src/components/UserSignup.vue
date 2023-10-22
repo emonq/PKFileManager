@@ -1,14 +1,10 @@
 <template>
-  <n-form
-      ref="formRef"
-      :model="user"
-      :rules="rules"
-      :show-require-mark="true">
+  <n-form ref="formRef" :model="user" :rules="rules" :show-require-mark="true">
     <n-form-item label="邮箱" path="email">
-      <n-input v-model:value="user.email"/>
+      <n-input v-model:value="user.email" />
     </n-form-item>
     <n-form-item label="用户名" path="username">
-      <n-input v-model:value="user.username"/>
+      <n-input v-model:value="user.username" />
     </n-form-item>
     <n-form-item>
       <n-button type="primary" @click="register">注册</n-button>
@@ -16,8 +12,8 @@
   </n-form>
 </template>
 <script setup>
-import {NForm, NFormItem, NInput, NButton, useMessage} from "naive-ui";
-import {ref, inject} from 'vue';
+import { NForm, NFormItem, NInput, NButton, useMessage } from "naive-ui";
+import { ref, inject } from 'vue';
 import router from "@/router";
 
 const message = useMessage();
@@ -64,15 +60,22 @@ const register = (e) => {
   formRef.value?.validate((errors) => {
     if (!errors) {
       $pkFileManager.signUp(user.value.username, user.value.email)
-          .then(() => {
-            message.success('注册成功');
-            router.push('/');
-          })
-          .catch((err) => {
-            console.log(err);
-            if (err.response.data.error)
-              message.error(`注册失败：${err.response.data.error}`);
-          });
+        .then(() => {
+          message.success('注册成功');
+          router.push('/');
+        })
+        .catch((err) => {
+          console.log(err);
+          if (err.response?.data.error) {
+            message.error(`注册失败：${err.response.data.error}`);
+          }
+          else if (err.name === 'NotAllowedError') {
+            message.error("注册失败：用户已取消");
+          }
+          else {
+            message.error("注册失败");
+          }
+        });
     } else {
       message.error("注册失败，请检查输入");
     }

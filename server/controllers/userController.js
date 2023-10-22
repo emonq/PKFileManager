@@ -4,11 +4,11 @@ const {
     generateAuthenticationOptions,
     verifyAuthenticationResponse
 } = require('@simplewebauthn/server');
-const { isoBase64URL, isoUint8Array, isoCBOR } = require('@simplewebauthn/server/helpers');
-const { User } = require('../models/user');
-const { Credential } = require('../models/credential');
+const {isoBase64URL, isoUint8Array, isoCBOR} = require('@simplewebauthn/server/helpers');
+const {User} = require('../models/user');
+const {Credential} = require('../models/credential');
 
-const { rpName, rpID, origin } = require('../config/rp.config');
+const {rpName, rpID, origin} = require('../config/rp.config');
 const mongoose = require("mongoose");
 const smtpSender = require('../utils/smtpSender');
 
@@ -16,7 +16,7 @@ const EMAIL_CODE_MAX_TRIES = process.env.EMAIL_CODE_MAX_TRIES || 3;
 const EMAIL_SEND_INTERVAL = process.env.EMAIL_SEND_INTERVAL || 1000 * 60; // 1000*60 ms = 1 minute
 const EMAIL_CODE_EXPIRATION = process.env.EMAIL_CODE_EXPIRATION || 1000 * 60 * 5; // 1000*60*5 ms = 5 minutes
 
-const { customAlphabet, nanoid } = require('nanoid');
+const {customAlphabet, nanoid} = require('nanoid');
 
 const extractUserInfo = (user) => {
     return {
@@ -35,7 +35,7 @@ const extractUserInfo = (user) => {
 }
 
 exports.getMe = async (req, res) => {
-    const user = await User.findOne({ _id: req.session.user._id })
+    const user = await User.findOne({_id: req.session.user._id})
     if (!user) {
         req.session.destroy();
         res.status(401).end();
@@ -47,10 +47,10 @@ exports.getMe = async (req, res) => {
 
 exports.removeKey = async (req, res) => {
     if (!req.body.id) {
-        res.status(400).json({ error: 'Invalid credential ID' });
+        res.status(400).json({error: 'Invalid credential ID'});
         return;
     }
-    const user = await User.findOne({ id: req.session.user.id });
+    const user = await User.findOne({id: req.session.user.id});
     if (!user) {
         req.session.destroy();
         res.status(401).end();
@@ -58,7 +58,7 @@ exports.removeKey = async (req, res) => {
     }
     const credential = user.credentials.find(credential => credential.credentialID.toString('base64') === req.body.id);
     if (!credential) {
-        res.status(400).json({ error: 'Invalid credential ID' });
+        res.status(400).json({error: 'Invalid credential ID'});
         return;
     }
     await user.credentials.id(credential._id).deleteOne();
@@ -73,7 +73,7 @@ exports.signUpStart = async (req, res) => {
     if (req.session.user) {
         uid = req.session.user.id;
         username = req.session.user.username;
-        const user = await User.findOne({ id: uid });
+        const user = await User.findOne({id: uid});
         excludeCredentials = user.credentials.map(credential => ({
             id: credential.credentialID,
             type: credential.credentialType
@@ -83,19 +83,19 @@ exports.signUpStart = async (req, res) => {
     // new user, check if username and email are available
     else {
         if (!req.body.username || !req.body.email) {
-            res.status(400).json({ error: 'Parameter missing' });
+            res.status(400).json({error: 'Parameter missing'});
             return;
         }
 
         const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
         if (!emailRegex.test(req.body.email)) {
-            res.status(400).json({ error: 'Invalid email format' });
+            res.status(400).json({error: 'Invalid email format'});
             return;
         }
 
-        let user = await User.findOne({ username: req.body.username });
+        let user = await User.findOne({username: req.body.username});
         if (user) {
-            res.status(400).json({ error: 'Username already exists' });
+            res.status(400).json({error: 'Username already exists'});
             return;
         }
 
@@ -137,12 +137,12 @@ exports.signUpFinish = async (req, res) => {
             expectedRPID: rpID,
             requireUserVerification: true,
         });
-        const { verified, registrationInfo } = verification;
+        const {verified, registrationInfo} = verification;
         if (!verified) {
-            res.status(400).json({ error: 'Invalid registration response' });
+            res.status(400).json({error: 'Invalid registration response'});
             return;
         }
-        const { credentialPublicKey, credentialID, counter, credentialType } = registrationInfo;
+        const {credentialPublicKey, credentialID, counter, credentialType} = registrationInfo;
 
         let credential = new Credential({
             credentialID: Buffer.from(credentialID),
@@ -164,25 +164,26 @@ exports.signUpFinish = async (req, res) => {
                 enabled: true
             })
         } else {
-            user = await User.findOne({ id: req.session.user.id });
+            user = await User.findOne({id: req.session.user.id});
         }
         user.credentials.push(credential);
         await user.save();
-        req.session.registration = null;
+        req.session.user = user;
         res.json(extractUserInfo(user));
     } catch (e) {
         console.log(e);
         res.status(500).end();
-        return;
+    } finally {
+        req.session.registration = null;
     }
 }
 
 exports.loginStart = async (req, res) => {
     const method = req.body.method || 'passkey';
 
-    let user = await User.findOne({ username: req.body.username });
+    let user = await User.findOne({username: req.body.username});
     if (!user) {
-        res.status(400).json({ error: 'User not found' });
+        res.status(400).json({error: 'User not found'});
         return;
     }
     req.session.login = {
@@ -207,7 +208,7 @@ exports.loginStart = async (req, res) => {
         res.json(options);
     } else if (method === 'email') {
         if (new Date() - user.lastEmailTime < EMAIL_SEND_INTERVAL) {
-            res.status(403).json({ error: 'Email sent too frequently' });
+            res.status(403).json({error: 'Email sent too frequently'});
             return;
         }
 
@@ -220,43 +221,43 @@ exports.loginStart = async (req, res) => {
             req.session.login.code = code;
             req.session.login.codeSentAt = new Date();
             req.session.login.retries = EMAIL_CODE_MAX_TRIES;
-            res.json({ message: 'Email sent' });
+            res.json({message: 'Email sent'});
         } catch (err) {
             console.log(err);
             req.session.login = null;
-            res.status(500).json({ error: 'Failed to send email' });
+            res.status(500).json({error: 'Failed to send email'});
             return;
         }
 
     } else {
         req.login = null;
-        res.status(400).json({ error: `authentication method ${method} is not supported` })
+        res.status(400).json({error: `authentication method ${method} is not supported`})
     }
 }
 
 exports.loginFinish = async (req, res) => {
     if (!req.session.login) {
-        res.status(400).json({ error: "Login not started" });
+        res.status(400).json({error: "Login not started"});
         return;
     }
 
-    const user = await User.findOne({ id: req.session.login.uid });
+    const user = await User.findOne({id: req.session.login.uid});
     if (!user) {
-        res.status(400).json({ error: "User not found" });
+        res.status(400).json({error: "User not found"});
         req.session.destroy();
         return;
     }
 
     if (req.session.login.method === 'passkey') {
         if (!req.body.id) {
-            res.status(400).json({ error: "Invalid credential ID" });
+            res.status(400).json({error: "Invalid credential ID"});
             req.session.login = null;
             return;
         }
         const credentialIDBase64 = Buffer.from(isoBase64URL.toBuffer(req.body.id)).toString('base64');
         const credential = user.credentials.find(credential => credential.credentialID.toString('base64') === credentialIDBase64);
         if (!credential) {
-            res.status(400).json({ error: 'Invalid credential ID' });
+            res.status(400).json({error: 'Invalid credential ID'});
             req.session.login = null;
             return;
         }
@@ -269,9 +270,9 @@ exports.loginFinish = async (req, res) => {
                 authenticator: credential,
                 requireUserVerification: true,
             });
-            const { verified, authenticationInfo } = verification;
+            const {verified, authenticationInfo} = verification;
             if (!verified) {
-                res.status(400).json({ error: 'Invalid authentication response' });
+                res.status(400).json({error: 'Invalid authentication response'});
                 req.session.login = null;
                 return;
             }
@@ -280,13 +281,13 @@ exports.loginFinish = async (req, res) => {
             req.session.user = user;
             res.json(extractUserInfo(user));
         } catch (e) {
-            res.status(403).json({ error: 'Invalid authentication response' });
+            res.status(403).json({error: 'Invalid authentication response'});
         } finally {
             req.session.login = null;
         }
     } else if (req.session.login.method === 'email') {
         if (new Date() - req.session.login.codeSentAt > EMAIL_CODE_EXPIRATION) {
-            res.status(403).json({ error: 'Code expired' });
+            res.status(403).json({error: 'Code expired'});
             req.session.login = null;
             return;
         }
@@ -294,9 +295,9 @@ exports.loginFinish = async (req, res) => {
             req.session.login.retries--;
             if (req.session.login.retries <= 0) {
                 req.session.login = null;
-                res.status(403).json({ error: 'Too many retries' });
+                res.status(403).json({error: 'Too many retries'});
             } else {
-                res.status(400).json({ error: 'Invalid code' });
+                res.status(400).json({error: 'Invalid code'});
             }
             return;
         }
@@ -305,7 +306,7 @@ exports.loginFinish = async (req, res) => {
         res.json(extractUserInfo(user));
     } else {
         req.session.login = null;
-        res.status(403).json({ error: 'Invalid login method' });
+        res.status(403).json({error: 'Invalid login method'});
     }
 }
 

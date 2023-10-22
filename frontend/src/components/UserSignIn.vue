@@ -1,9 +1,5 @@
 <template>
-  <n-form
-      ref="formRef"
-      :model="user"
-      :rules="rules"
-  >
+  <n-form ref="formRef" :model="user" :rules="rules">
     <n-form-item label="用户名" path="username">
       <n-input v-model:value="user.username" placeholder="输入用户名"/>
     </n-form-item>
@@ -11,23 +7,10 @@
       <n-button attr-type="button" type="primary" @click="signIn">登录</n-button>
     </n-form-item>
   </n-form>
-  <n-modal
-      v-model:show="requireEmailCode"
-      preset="dialog"
-      :show-icon="false"
-      title="请输入验证码"
-      positive-text="确认"
-      :auto-focus="true"
-      :closable="false"
-      :mask-closable="false"
-      @positive-click="signInEmailFinish"
-  >
+  <n-modal v-model:show="requireEmailCode" preset="dialog" :show-icon="false" title="请输入验证码" positive-text="确认"
+           :auto-focus="true" :closable="false" :mask-closable="false" @positive-click="signInEmailFinish">
     <template #default>
-      <n-form
-          ref="emailCodeFormRef"
-          :model="emailCode"
-          :rules="emailCodeRules"
-      >
+      <n-form ref="emailCodeFormRef" :model="emailCode" :rules="emailCodeRules">
         <n-form-item label="邮箱验证码" path="code">
           <n-input v-model:value="emailCode.code" placeholder="输入验证码"/>
         </n-form-item>
@@ -79,9 +62,9 @@ const rules = {
       trigger: ['blur', 'input'],
     },
     {
-      min: 3,
+      min: 1,
       max: 64,
-      message: '用户名长度在 3 到 64 个字符',
+      message: '用户名长度在 1 到 64 个字符',
       trigger: ['blur', 'input'],
     }
   ],
