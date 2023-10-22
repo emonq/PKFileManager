@@ -44,7 +44,7 @@ exports.upload = async (req, res) => {
             md5: file.md5,
         });
         try {
-            await file.mv(`${FILE_STORAGE_DIR}/${req.session.user.id}/${file.md5}`);
+            await file.mv(`${FILE_STORAGE_DIR}/${req.session.user.id}/${fileData._id}`);
             user.files.push(fileData);
             await user.save();
             fileInfos[name] = {
@@ -80,7 +80,7 @@ exports.download = async (req, res) => {
         res.status(404).end();
         return;
     }
-    res.download(`${FILE_STORAGE_DIR}/${user.id}/${file.md5}`, file.name);
+    res.download(`${FILE_STORAGE_DIR}/${user.id}/${file._id}`, file.name);
 }
 
 exports.delete = async (req, res) => {
@@ -92,8 +92,8 @@ exports.delete = async (req, res) => {
     }
     file.deleteOne();
     await user.save();
-    if (!user.files.find(f => f.md5 === file.md5) && fs.existsSync(`${FILE_STORAGE_DIR}/${user.id}/${file.md5}`)) {
-        fs.unlinkSync(`${FILE_STORAGE_DIR}/${user.id}/${file.md5}`)
+    if (fs.existsSync(`${FILE_STORAGE_DIR}/${user.id}/${req.params.id}`)) {
+        fs.unlinkSync(`${FILE_STORAGE_DIR}/${user.id}/${req.params.id}`)
     }
     res.json(generateFileList(user));
 }
