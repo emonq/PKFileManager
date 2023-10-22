@@ -92,7 +92,7 @@ exports.delete = async (req, res) => {
     }
     file.deleteOne();
     await user.save();
-    if (!user.files.find(f => f.md5 === file.md5)) {
+    if (!user.files.find(f => f.md5 === file.md5) && fs.existsSync(`${FILE_STORAGE_DIR}/${user.id}/${file.md5}`)) {
         fs.unlinkSync(`${FILE_STORAGE_DIR}/${user.id}/${file.md5}`)
     }
     res.json(generateFileList(user));
