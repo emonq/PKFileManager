@@ -1,0 +1,52 @@
+version: '3.8'
+services:
+  pkfilemanager-db:
+    container_name: pkfilemanager-db
+    image: mongo:latest
+    env_file:
+      - .env
+    volumes:
+      - db-data:/data/db
+
+  pkfilemanager-server:
+    build: server
+    container_name: pkfilemanager-server
+    depends_on:
+      - pkfilemanager-db
+    links:
+      - pkfilemanager-db
+    environment:
+      - NODE_ENV=production
+      - MONGODB_HOST=pkfilemanager-db
+      - MONGODB_PORT=27017
+    env_file:
+      - .env
+    command: npm start
+    volumes:
+      - npm-cache:/root/.npm
+    image: emonq/pkfilemanager-server:latest
+
+  pkfilemanager:
+    container_name: pkfilemanager
+    image: caddy:latest
+    depends_on:
+      - pkfilemanager-server
+    links:
+      - pkfilemanager-server
+    cap_add:
+      - NET_ADMIN
+    ports:
+      - "80:80"
+      - "443:443"
+      - "443:443/udp"
+    volumes:
+      - ./Caddyfile:/etc/caddy/Caddyfile
+      - ./frontend/dist:/var/www/frontend
+      - ./caddy_data:/data
+      - ./caddy_config:/config
+
+volumes:
+  npm-cache:
+    name: npm-cache
+  db-data:
+    name: db-data

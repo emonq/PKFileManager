@@ -1,0 +1,15 @@
+<YOUR-HOST-NAME> {
+    handle_path / api/* {
+        rewrite * /api{path}
+        reverse_proxy {
+            to pkfilemanager-server:3000
+
+        }
+    }
+
+    handle {
+        root * /var/www/frontend
+        try_files {path} /
+        file_server
+    }
+}
